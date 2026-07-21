@@ -1,7 +1,10 @@
+import re
 from io import BytesIO
+from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.models import DetectionResult, ExportRequest
 from app.services.dxf_export import build_dxf
@@ -14,6 +17,14 @@ app = FastAPI(
     version="0.1.0",
     description="Распознавание геодезических эскизов с обязательной проверкой геометрии.",
 )
+
+STATIC_DIR = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def index() -> FileResponse:
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/health")
@@ -42,6 +53,7 @@ def export_dxf(request: ExportRequest) -> StreamingResponse:
         raise HTTPException(status_code=422, detail="Добавьте хотя бы один отрезок")
 
     safe_name = request.filename.rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    safe_name = re.sub(r"[^a-zA-Z0-9._-]", "_", safe_name) or "drawing.dxf"
     if not safe_name.lower().endswith(".dxf"):
         safe_name += ".dxf"
 
@@ -50,4 +62,3 @@ def export_dxf(request: ExportRequest) -> StreamingResponse:
         media_type="application/dxf",
         headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
     )
-
