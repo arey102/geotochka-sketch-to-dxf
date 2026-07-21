@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#08111f" />
+    <title>GEOточка — эскиз в DXF</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="GEOточка">
+        <span class="brand-mark">G</span>
+        <span><b>GEOточка</b><small>Эскиз → AutoCAD</small></span>
+      </a>
+      <span class="status" id="service-status"><i></i> Сервис готов</span>
+    </header>
+
+    <main>
+      <section class="hero" id="upload-screen">
+        <div class="hero-copy">
+          <span class="eyebrow">Чертёж за несколько минут</span>
+          <h1>Превратите фото эскиза в <em>DXF для AutoCAD</em></h1>
+          <p>Загрузите фото листа. GEOточка выровняет изображение, найдёт основные линии и даст проверить результат перед экспортом.</p>
+          <div class="steps">
+            <span><b>01</b> Фото</span><span>→</span><span><b>02</b> Проверка</span><span>→</span><span><b>03</b> DXF</span>
+          </div>
+        </div>
+
+        <label class="dropzone" id="dropzone" for="file-input">
+          <input id="file-input" type="file" accept="image/jpeg,image/png" />
+          <span class="upload-icon">↥</span>
+          <strong>Перетащите фото сюда</strong>
+          <span>или нажмите, чтобы выбрать JPEG / PNG</span>
+          <button type="button" tabindex="-1">Выбрать фотографию</button>
+          <small>До 20 МБ · фотография обрабатывается только в памяти</small>
+        </label>
+      </section>
+
+      <section class="loading" id="loading-screen" hidden>
+        <div class="spinner"></div>
+        <h2>Обрабатываем эскиз</h2>
+        <p>Исправляем перспективу и ищем геометрию…</p>
+      </section>
+
+      <section class="editor" id="editor-screen" hidden>
+        <div class="editor-head">
+          <div>
+            <span class="eyebrow">Шаг 2 из 3</span>
+            <h1>Проверьте найденные линии</h1>
+          </div>
+          <div class="head-actions">
+            <button class="button ghost" id="new-file">Загрузить другое фото</button>
+            <button class="button primary" id="export-button">Скачать DXF</button>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <aside class="toolbar" aria-label="Инструменты">
+            <button class="tool active" data-mode="select" title="Выбор (V)"><span>↖</span><small>Выбор</small></button>
+            <button class="tool" data-mode="draw" title="Добавить линию (L)"><span>╱</span><small>Линия</small></button>
+            <button class="tool" id="delete-line" title="Удалить выбранную"><span>⌫</span><small>Удалить</small></button>
+            <hr />
+            <button class="tool" id="undo" title="Отменить (Ctrl+Z)"><span>↶</span><small>Назад</small></button>
+            <button class="tool" id="redo" title="Повторить (Ctrl+Y)"><span>↷</span><small>Вперёд</small></button>
+          </aside>
+
+          <div class="drawing-area">
+            <div class="canvas-meta">
+              <span id="file-name">Эскиз</span>
+              <span><b id="line-count">0</b> линий</span>
+              <label>Фото <input id="opacity" type="range" min="0" max="100" value="64" /></label>
+            </div>
+            <div class="canvas-wrap" id="canvas-wrap">
+              <svg id="drawing" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Редактор чертежа">
+                <image id="sketch-image" x="0" y="0" preserveAspectRatio="none" />
+                <g id="line-layer"></g>
+                <g id="handle-layer"></g>
+                <line id="draft-line" class="draft" hidden />
+              </svg>
+              <div class="empty-selection" id="canvas-hint">Выберите линию, чтобы изменить её</div>
+            </div>
+          </div>
+
+          <aside class="properties">
+            <section class="panel">
+              <div class="panel-title"><h2>Параметры линии</h2><span id="selection-badge">Не выбрана</span></div>
+              <div id="no-selection" class="placeholder">Нажмите на линию на чертеже. Концы выбранной линии можно перетаскивать.</div>
+              <div id="line-properties" hidden>
+                <label class="field">Тип
+                  <select id="line-kind">
+                    <option value="wall">Стена</option>
+                    <option value="opening">Проём</option>
+                    <option value="dimension">Размерная линия</option>
+                    <option value="reference">Вспомогательная</option>
+                  </select>
+                </label>
+                <div class="coordinate-grid">
+                  <label class="field">X₁<input id="x1" type="number" step="0.1" /></label>
+                  <label class="field">Y₁<input id="y1" type="number" step="0.1" /></label>
+                  <label class="field">X₂<input id="x2" type="number" step="0.1" /></label>
+                  <label class="field">Y₂<input id="y2" type="number" step="0.1" /></label>
+                </div>
+                <p class="measure">Длина на фото: <b id="pixel-length">0 px</b></p>
+              </div>
+            </section>
+
+            <section class="panel calibration">
+              <div class="panel-title"><h2>Масштаб</h2><span class="required">обязательно</span></div>
+              <p>Выберите линию с известной длиной и укажите реальный размер.</p>
+              <label class="field">Известная длина
+                <div class="input-unit"><input id="known-length" type="number" min="0.1" step="0.1" placeholder="например, 6500" /><span>мм</span></div>
+              </label>
+              <button class="button secondary full" id="calibrate">Рассчитать масштаб</button>
+              <div class="scale-result" id="scale-result"><span>Текущий масштаб</span><b>1 мм / пиксель</b></div>
+            </section>
+
+            <section class="panel legend">
+              <div class="panel-title"><h2>Слои DXF</h2></div>
+              <span><i class="wall"></i> Стены</span>
+              <span><i class="opening"></i> Проёмы</span>
+              <span><i class="dimension"></i> Размеры</span>
+              <span><i class="reference"></i> Вспомогательные</span>
+            </section>
+          </aside>
+        </div>
+
+        <div class="notice" id="notice"><b>Перед экспортом:</b> удалите линии текста и отметок, затем задайте масштаб по одному известному размеру.</div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>
