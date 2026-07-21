@@ -14,8 +14,8 @@ MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
 app = FastAPI(
     title="GEOточка Sketch to DXF",
-    version="0.1.0",
-    description="Распознавание геодезических эскизов с обязательной проверкой геометрии.",
+    version="1.0.0",
+    description="Фото геодезического эскиза в проверяемую геометрию и DXF.",
 )
 
 STATIC_DIR = Path(__file__).parent / "static"
