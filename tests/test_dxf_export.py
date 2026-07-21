@@ -20,3 +20,18 @@ def test_exports_scaled_line_and_flips_image_y_axis() -> None:
     assert tuple(entities[0].dxf.end) == (70.0, -30.0, 0.0)
     assert entities[0].dxf.layer == "WALLS"
 
+
+def test_exports_line_kinds_to_separate_layers_and_passes_audit() -> None:
+    request = ExportRequest(
+        lines=[
+            LineSegment(start=Point(x=0, y=0), end=Point(x=10, y=0), kind="opening"),
+            LineSegment(start=Point(x=0, y=2), end=Point(x=10, y=2), kind="dimension"),
+            LineSegment(start=Point(x=0, y=4), end=Point(x=10, y=4), kind="reference"),
+        ]
+    )
+
+    document = ezdxf.read(StringIO(build_dxf(request).decode("utf-8")))
+    layers = [entity.dxf.layer for entity in document.modelspace().query("LINE")]
+
+    assert layers == ["OPENINGS", "DIMENSIONS", "REFERENCE"]
+    assert not document.audit().has_errors
