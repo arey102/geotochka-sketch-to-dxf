@@ -12,6 +12,13 @@ DXF_UNIT_CODES = {
     DrawingUnits.METERS: 6,
 }
 
+LAYER_BY_KIND = {
+    "wall": "WALLS",
+    "opening": "OPENINGS",
+    "dimension": "DIMENSIONS",
+    "reference": "REFERENCE",
+}
+
 
 def _coordinate_scale(request: ExportRequest) -> float:
     millimeters_per_unit = {
@@ -26,17 +33,17 @@ def build_dxf(request: ExportRequest) -> bytes:
     document = ezdxf.new("R2010", setup=True)
     document.units = DXF_UNIT_CODES[request.units]
     document.layers.add("WALLS", color=7)
+    document.layers.add("OPENINGS", color=1)
     document.layers.add("DIMENSIONS", color=3)
-    document.layers.add("NOTES", color=2)
+    document.layers.add("REFERENCE", color=8)
 
     modelspace = document.modelspace()
     scale = _coordinate_scale(request)
     for line in request.lines:
         start = (line.start.x * scale, -line.start.y * scale)
         end = (line.end.x * scale, -line.end.y * scale)
-        modelspace.add_line(start, end, dxfattribs={"layer": "WALLS"})
+        modelspace.add_line(start, end, dxfattribs={"layer": LAYER_BY_KIND[line.kind]})
 
     stream = StringIO()
     document.write(stream)
     return stream.getvalue().encode("utf-8")
-
