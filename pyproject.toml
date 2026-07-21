@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "geotochka-sketch-to-dxf"
+version = "0.1.0"
+description = "Convert a photographed survey sketch into reviewable geometry and DXF"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "ezdxf>=1.3,<2",
+  "fastapi>=0.115,<1",
+  "numpy>=2.0,<3",
+  "opencv-python-headless>=4.10,<5",
+  "python-multipart>=0.0.18,<1",
+  "uvicorn[standard]>=0.32,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.27,<1",
+  "pytest>=8,<9",
+  "ruff>=0.8,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = [".deps", ".venv", "pip-build-env-*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
